@@ -165,7 +165,8 @@ export default function Home() {
   const stopCurrentSong = () => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
       audioRef.current = null;
     }
     setIsPlaying(false);
@@ -183,24 +184,31 @@ export default function Home() {
 
       const handleTimeUpdate = () => {
         if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-          setProgress((audioRef.current.currentTime / PREVIEW_DURATION) * 100);
+          const newTime = audioRef.current.currentTime;
+          setCurrentTime(newTime);
+          setProgress((newTime / PREVIEW_DURATION) * 100);
         }
       };
 
       const handleSongEnd = () => {
         handleNextSong();
       };
+
+      const onCanPlay = () => {
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(e => {
+          console.error("Error playing audio:", e);
+          setIsPlaying(false);
+        });
+      };
       
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('ended', handleSongEnd);
+      audio.addEventListener('canplay', onCanPlay);
 
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(e => {
-        console.error("Error playing audio:", e);
+    } else {
         setIsPlaying(false);
-      });
     }
   };
 
@@ -254,6 +262,7 @@ export default function Home() {
     if (recommendations.length < 2) return null;
     
     const currentIndex = recommendations.findIndex(s => s.id === selectedSong.id);
+    if (currentIndex === -1) return null;
     let nextIndex = currentIndex;
 
     for (let i = 0; i < recommendations.length; i++) {
@@ -266,6 +275,7 @@ export default function Home() {
       if (recommendations[nextIndex].previewUrl) {
         return recommendations[nextIndex];
       }
+      // If we've looped all the way back to the start without finding a valid song
       if (nextIndex === currentIndex) break;
     }
     return null;
