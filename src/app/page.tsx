@@ -35,7 +35,6 @@ function SubmitButton() {
   );
 }
 
-// Helper functions for time
 const PREVIEW_DURATION = 30; // Preview duration in seconds
 
 const formatTime = (timeInSeconds: number): string => {
@@ -152,7 +151,6 @@ function RecommendationSkeleton() {
   );
 }
 
-
 export default function Home() {
   const [state, formAction] = useActionState(getRecommendations, initialState);
   const { pending } = useFormStatus();
@@ -164,148 +162,124 @@ export default function Home() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Effect to handle audio playback and state
-  useEffect(() => {
-    if (isPlaying) {
-      audioRef.current?.play().catch(e => console.error("Error playing audio:", e));
-    } else {
-      audioRef.current?.pause();
-    }
-  }, [isPlaying]);
-
-  // Effect to manage audio element and its listeners when song changes
-  useEffect(() => {
-    // Stop and clean up previous audio
+  const stopCurrentSong = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
+      audioRef.current = null;
     }
-
-    // Reset player state
+    setIsPlaying(false);
     setCurrentTime(0);
     setProgress(0);
+  };
 
-    if (selectedSong?.previewUrl) {
-      const audio = new Audio(selectedSong.previewUrl);
+  const playSong = (song: Song) => {
+    stopCurrentSong();
+    
+    if (song.previewUrl) {
+      const audio = new Audio(song.previewUrl);
       audioRef.current = audio;
       audio.volume = 0.5;
 
       const handleTimeUpdate = () => {
         if (audioRef.current) {
-          const newTime = audioRef.current.currentTime;
-          setCurrentTime(newTime);
-          setProgress((newTime / PREVIEW_DURATION) * 100);
+          setCurrentTime(audioRef.current.currentTime);
+          setProgress((audioRef.current.currentTime / PREVIEW_DURATION) * 100);
         }
       };
 
       const handleSongEnd = () => {
-        setIsPlaying(false);
         handleNextSong();
       };
-
-      const handleCanPlay = () => {
-        if (isPlaying) {
-          audioRef.current?.play().catch(e => console.error("Error starting playback:", e));
-        }
-      }
-
+      
       audio.addEventListener('timeupdate', handleTimeUpdate);
       audio.addEventListener('ended', handleSongEnd);
-      audio.addEventListener('canplay', handleCanPlay);
 
-      // Cleanup function
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
-          audioRef.current.removeEventListener('ended', handleSongEnd);
-          audioRef.current.removeEventListener('canplay', handleCanPlay);
-        }
-      };
-    } else {
-      setIsPlaying(false);
+      audio.play().then(() => {
+        setIsPlaying(true);
+      }).catch(e => {
+        console.error("Error playing audio:", e);
+        setIsPlaying(false);
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSong]);
+  };
 
-
-  // Effect to auto-select the first song when new recommendations arrive
   useEffect(() => {
     if (state.recommendations.length > 0 && !selectedSong) {
        handleSelectSong(state.recommendations[0], false);
     }
-    // Only run when recommendations change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.recommendations]);
 
-  // Wrapper for form action to reset state on new search
   const handleFormAction: (payload: FormData) => void = (payload) => {
-    if(audioRef.current) {
-      audioRef.current.pause();
-    }
+    stopCurrentSong();
     setSelectedSong(null);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setProgress(0);
     setHasSearched(true);
     formAction(payload);
   };
 
   const handleSelectSong = (song: Song, autoPlay = true) => {
     setSelectedSong(song);
-    setIsPlaying(autoPlay && !!song.previewUrl);
+    if (autoPlay) {
+      playSong(song);
+    } else {
+      stopCurrentSong();
+    }
   };
 
   const handleClosePlayer = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    stopCurrentSong();
     setSelectedSong(null);
-    setIsPlaying(false);
   };
 
   const handlePlayPause = () => {
-    if (selectedSong?.previewUrl) {
-      setIsPlaying(prev => !prev);
+    if (!selectedSong) return;
+  
+    if (isPlaying) {
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.play().then(() => setIsPlaying(true));
+      } else {
+        // If no audio element exists, start playback
+        playSong(selectedSong);
+      }
     }
   }
 
-  const findAdjacentSong = (startIndex: number, direction: 'next' | 'prev'): Song | null => {
+  const findAdjacentSong = (direction: 'next' | 'prev'): Song | null => {
+    if (!selectedSong) return null;
     const { recommendations } = state;
-    if (recommendations.length === 0) return null;
-  
-    let currentIndex = startIndex;
-    // Iterate through the songs list once
+    if (recommendations.length < 2) return null;
+    
+    const currentIndex = recommendations.findIndex(s => s.id === selectedSong.id);
+    let nextIndex = currentIndex;
+
     for (let i = 0; i < recommendations.length; i++) {
       if (direction === 'next') {
-        currentIndex = (currentIndex + 1) % recommendations.length;
+        nextIndex = (nextIndex + 1) % recommendations.length;
       } else {
-        currentIndex = (currentIndex - 1 + recommendations.length) % recommendations.length;
+        nextIndex = (nextIndex - 1 + recommendations.length) % recommendations.length;
       }
       
-      // If we find a playable song, return it
-      if (recommendations[currentIndex].previewUrl) {
-        return recommendations[currentIndex];
+      if (recommendations[nextIndex].previewUrl) {
+        return recommendations[nextIndex];
       }
-      // If we've looped back to the start, break to avoid infinite loop
-      if (currentIndex === startIndex) break;
+      if (nextIndex === currentIndex) break;
     }
-    return null; // No other playable song found
+    return null;
   }
 
   const handleNextSong = () => {
-    if (!selectedSong) return;
-    const currentIndex = state.recommendations.findIndex(s => s.id === selectedSong.id);
-    const nextSong = findAdjacentSong(currentIndex, 'next');
+    const nextSong = findAdjacentSong('next');
     if (nextSong) {
       handleSelectSong(nextSong, true);
     }
   };
 
   const handlePrevSong = () => {
-    if (!selectedSong) return;
-    const currentIndex = state.recommendations.findIndex(s => s.id === selectedSong.id);
-    const prevSong = findAdjacentSong(currentIndex, 'prev');
+    const prevSong = findAdjacentSong('prev');
     if (prevSong) {
       handleSelectSong(prevSong, true);
     }
