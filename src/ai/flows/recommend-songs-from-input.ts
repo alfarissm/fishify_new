@@ -37,7 +37,7 @@ const RecommendSongsFromInputOutputSchema = z.object({
       duration: z.string().describe('The duration of the song in mm:ss format.'),
       previewUrl: z.string().nullable().describe('The URL for a 30-second audio preview of the song, or null if not available.')
     }))
-    .describe('An array of 8 recommended songs.'),
+    .describe('An array of 10 recommended songs.'),
 });
 export type RecommendSongsFromInputOutput = z.infer<
   typeof RecommendSongsFromInputOutputSchema
@@ -58,12 +58,12 @@ const formatDuration = (ms: number): string => {
 const recommendationPrompt = ai.definePrompt({
   name: 'recommendationPrompt',
   input: { schema: RecommendSongsFromInputInputSchema },
-  output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(8) }) },
-  prompt: `You are a music recommendation expert. Your goal is to recommend 8 songs based on the user's input. First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
+  output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(10) }) },
+  prompt: `You are a music recommendation expert. Your goal is to recommend 10 songs based on the user's input. First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
 
-- If the input is an artist's name, recommend 8 popular songs by that artist.
-- If the input is a song title, recommend 8 songs with a similar style or from similar artists.
-- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 8 songs that fit that context.
+- If the input is an artist's name, recommend 10 popular songs by that artist.
+- If the input is a song title, recommend 10 songs with a similar style or from similar artists.
+- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 10 songs that fit that context.
 
 Provide just the song name and artist. Do not provide any other information.
 
