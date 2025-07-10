@@ -34,7 +34,7 @@ Here’s how the flow works:
 - **Frontend**: Next.js, Tailwind CSS, TypeScript  
 - **Backend AI**: Genkit (Google AI SDK)  
 - **Music API**: Spotify Web API  
-- **Deployment**: Vercel (frontend), Cloud Run / Fly.io / Railway (backend)
+- **Deployment**: Vercel 
 
 ---
 
