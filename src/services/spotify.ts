@@ -1,13 +1,10 @@
 'use server';
 
 import SpotifyWebApi from 'spotify-web-api-node';
-import getConfig from 'next/config';
-
-const { serverRuntimeConfig } = getConfig() || {};
 
 const spotifyApi = new SpotifyWebApi({
-  clientId: serverRuntimeConfig.spotifyClientId || process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: serverRuntimeConfig.spotifyClientSecret || process.env.SPOTIFY_CLIENT_SECRET,
+  clientId: process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
 
 let tokenExpirationTime = 0;
