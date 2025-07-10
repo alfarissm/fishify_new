@@ -158,59 +158,82 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [progress, setProgress] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const stopCurrentSong = () => {
+  const handleNextSong = () => {
+    if (!selectedSong || state.recommendations.length === 0) return;
+    const currentIndex = state.recommendations.findIndex(s => s.id === selectedSong.id);
+    if (currentIndex === -1) return;
+
+    let nextIndex = currentIndex;
+    for (let i = 0; i < state.recommendations.length; i++) {
+        nextIndex = (nextIndex + 1) % state.recommendations.length;
+        const nextSong = state.recommendations[nextIndex];
+        if (nextSong.previewUrl) {
+            handleSelectSong(nextSong, true);
+            return;
+        }
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    
+    const handleTimeUpdate = () => {
+        if (audio) {
+            setCurrentTime(audio.currentTime);
+        }
+    };
+    
+    const handleSongEnd = () => {
+        setIsPlaying(false);
+        handleNextSong();
+    };
+
+    if (audio) {
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('ended', handleSongEnd);
+        audio.addEventListener('play', () => setIsPlaying(true));
+        audio.addEventListener('pause', () => setIsPlaying(false));
+    }
+
+    return () => {
+        if (audio) {
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('ended', handleSongEnd);
+            audio.removeEventListener('play', () => setIsPlaying(true));
+            audio.removeEventListener('pause', () => setIsPlaying(false));
+        }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioRef.current]);
+
+  const playSong = (song: Song, autoPlay: boolean) => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
-      audioRef.current = null;
+      audioRef.current.src = '';
     }
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setProgress(0);
-  };
-
-  const playSong = (song: Song) => {
-    stopCurrentSong();
     
     if (song.previewUrl) {
-      const audio = new Audio(song.previewUrl);
-      audioRef.current = audio;
-      audio.volume = 0.5;
-
-      const handleTimeUpdate = () => {
-        if (audioRef.current) {
-          const newTime = audioRef.current.currentTime;
-          setCurrentTime(newTime);
-          setProgress((newTime / PREVIEW_DURATION) * 100);
-        }
-      };
-
-      const handleSongEnd = () => {
-        handleNextSong();
-      };
-
-      const onCanPlay = () => {
-        audio.play().then(() => {
-          setIsPlaying(true);
-        }).catch(e => {
-          console.error("Error playing audio:", e);
+      const newAudio = new Audio(song.previewUrl);
+      newAudio.volume = 0.5;
+      audioRef.current = newAudio;
+      
+      if (autoPlay) {
+        newAudio.play().catch(e => {
+          console.error("Audio play failed:", e)
           setIsPlaying(false);
         });
-      };
-      
-      audio.addEventListener('timeupdate', handleTimeUpdate);
-      audio.addEventListener('ended', handleSongEnd);
-      audio.addEventListener('canplay', onCanPlay);
-
+      }
     } else {
-        setIsPlaying(false);
+      audioRef.current = null;
     }
+    
+    setCurrentTime(0);
+    setIsPlaying(autoPlay && !!song.previewUrl);
   };
+
 
   useEffect(() => {
     if (state.recommendations.length > 0 && !selectedSong) {
@@ -219,8 +242,11 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.recommendations]);
 
+
   const handleFormAction: (payload: FormData) => void = (payload) => {
-    stopCurrentSong();
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setSelectedSong(null);
     setHasSearched(true);
     formAction(payload);
@@ -228,31 +254,23 @@ export default function Home() {
 
   const handleSelectSong = (song: Song, autoPlay = true) => {
     setSelectedSong(song);
-    if (autoPlay) {
-      playSong(song);
-    } else {
-      stopCurrentSong();
-    }
+    playSong(song, autoPlay);
   };
 
   const handleClosePlayer = () => {
-    stopCurrentSong();
+    if (audioRef.current) {
+        audioRef.current.pause();
+    }
     setSelectedSong(null);
   };
 
   const handlePlayPause = () => {
-    if (!selectedSong) return;
+    if (!audioRef.current) return;
   
     if (isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
+      audioRef.current.pause();
     } else {
-      if (audioRef.current) {
-        audioRef.current.play().then(() => setIsPlaying(true));
-      } else {
-        // If no audio element exists, start playback
-        playSong(selectedSong);
-      }
+      audioRef.current.play().catch(e => console.error("Audio play failed:", e));
     }
   }
 
@@ -275,13 +293,12 @@ export default function Home() {
       if (recommendations[nextIndex].previewUrl) {
         return recommendations[nextIndex];
       }
-      // If we've looped all the way back to the start without finding a valid song
       if (nextIndex === currentIndex) break;
     }
     return null;
   }
 
-  const handleNextSong = () => {
+  const handleNextWithCheck = () => {
     const nextSong = findAdjacentSong('next');
     if (nextSong) {
       handleSelectSong(nextSong, true);
@@ -294,6 +311,8 @@ export default function Home() {
       handleSelectSong(prevSong, true);
     }
   };
+
+  const progress = audioRef.current ? (currentTime / PREVIEW_DURATION) * 100 : 0;
 
   return (
     <div className="flex min-h-screen bg-background transition-colors duration-500">
@@ -345,7 +364,7 @@ export default function Home() {
 
             {/* Mobile Player View */}
             <div className={cn("w-full md:hidden", selectedSong ? 'block' : 'hidden')}>
-              {selectedSong && <MusicPlayerPreview song={selectedSong} onClose={handleClosePlayer} onNext={handleNextSong} onPrev={handlePrevSong} isPlaying={isPlaying} onPlayPause={handlePlayPause} progress={progress} currentTime={currentTime} />}
+              {selectedSong && <MusicPlayerPreview song={selectedSong} onClose={handleClosePlayer} onNext={handleNextWithCheck} onPrev={handlePrevSong} isPlaying={isPlaying} onPlayPause={handlePlayPause} progress={progress} currentTime={currentTime} />}
             </div>
 
             {/* Recommendations List */}
@@ -384,7 +403,7 @@ export default function Home() {
 
           {/* Desktop Player Column */}
           <div className="hidden md:flex flex-1 justify-center w-full md:w-auto">
-            {selectedSong && <MusicPlayerPreview song={selectedSong} onClose={handleClosePlayer} onNext={handleNextSong} onPrev={handlePrevSong} isPlaying={isPlaying} onPlayPause={handlePlayPause} progress={progress} currentTime={currentTime} />}
+            {selectedSong && <MusicPlayerPreview song={selectedSong} onClose={handleClosePlayer} onNext={handleNextWithCheck} onPrev={handlePrevSong} isPlaying={isPlaying} onPlayPause={handlePlayPause} progress={progress} currentTime={currentTime} />}
           </div>
         </div>
       </main>
