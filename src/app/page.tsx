@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardFooter, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 const initialState: ActionState = {
   recommendations: [],
@@ -132,8 +132,29 @@ function MusicPlayerPreview({
   )
 }
 
+function RecommendationSkeleton() {
+  return (
+    <div className="w-full max-w-xl animate-pulse mt-4 md:mt-0">
+      <div className="flex flex-col">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="flex items-center p-1.5 rounded-lg">
+            <Skeleton className="h-8 w-8 rounded-md mr-3" />
+            <div className="flex-grow space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+            <Skeleton className="h-4 w-10 ml-4" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 export default function Home() {
   const [state, formAction] = useActionState(getRecommendations, initialState);
+  const { pending } = useFormStatus();
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -142,49 +163,62 @@ export default function Home() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Effect to handle audio playback
   useEffect(() => {
-    if (selectedSong && selectedSong.previewUrl) {
+    // If a song is selected and has a preview URL
+    if (selectedSong?.previewUrl) {
+      // Clean up previous audio element if it exists
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+        audioRef.current.removeEventListener('ended', handleSongEnd);
       }
-      audioRef.current = new Audio(selectedSong.previewUrl);
       
-      const setAudioData = () => {
-        // No need to set duration here, just handle time updates
-      };
+      // Create and configure new audio element
+      const audio = new Audio(selectedSong.previewUrl);
+      audioRef.current = audio;
+      audio.volume = 0.5;
 
-      const setAudioTime = () => {
-        if(audioRef.current) {
+      const handleTimeUpdate = () => {
+        if (audioRef.current) {
           const newTime = audioRef.current.currentTime;
           setCurrentTime(newTime);
           setProgress((newTime / PREVIEW_DURATION) * 100);
         }
       };
-
-      const handleEnded = () => {
+      
+      const handleSongEnd = () => {
+        setIsPlaying(false);
         handleNextSong();
       };
-      
-      audioRef.current.addEventListener('loadeddata', setAudioData);
-      audioRef.current.addEventListener('timeupdate', setAudioTime);
-      audioRef.current.addEventListener('ended', handleEnded);
+
+      audio.addEventListener('timeupdate', handleTimeUpdate);
+      audio.addEventListener('ended', handleSongEnd);
 
       if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+        audio.play().catch(e => console.error("Error playing audio:", e));
       }
 
+      // Cleanup on component unmount or when selectedSong changes
       return () => {
         if (audioRef.current) {
           audioRef.current.pause();
-          audioRef.current.removeEventListener('loadeddata', setAudioData);
-          audioRef.current.removeEventListener('timeupdate', setAudioTime);
-          audioRef.current.removeEventListener('ended', handleEnded);
+          audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+          audioRef.current.removeEventListener('ended', handleSongEnd);
+          audioRef.current = null;
         }
       };
+    } else {
+      // If no preview URL, ensure audio is stopped and reset state
+      if (audioRef.current) {
+          audioRef.current.pause();
+      }
+      setIsPlaying(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSong]);
 
+  // Effect to toggle play/pause state
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -195,15 +229,15 @@ export default function Home() {
     }
   }, [isPlaying]);
 
+  // Effect to auto-select the first song when new recommendations arrive
   useEffect(() => {
-    // Automatically select the first song when recommendations arrive
-    if (state.recommendations.length > 0) {
-      handleSelectSong(state.recommendations[0], false); // Don't autoplay
+    if (state.recommendations.length > 0 && !pending) {
+      handleSelectSong(state.recommendations[0], false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.recommendations]);
+  }, [state.recommendations, pending]);
 
-  // Reset selected song if a new search is performed
+  // Wrapper for form action to reset state on new search
   const handleFormAction: (payload: FormData) => void = (payload) => {
     if(audioRef.current) {
       audioRef.current.pause();
@@ -237,36 +271,41 @@ export default function Home() {
     }
   }
 
-  const findNextSongIndex = (currentIndex: number) => {
-     let nextIndex = (currentIndex + 1) % state.recommendations.length;
-     // Skip tracks without preview until we find one or loop back
-     while(!state.recommendations[nextIndex].previewUrl && nextIndex !== currentIndex) {
-       nextIndex = (nextIndex + 1) % state.recommendations.length;
-     }
-     return nextIndex;
-  }
-  
-  const findPrevSongIndex = (currentIndex: number) => {
-     let prevIndex = (currentIndex - 1 + state.recommendations.length) % state.recommendations.length;
-     // Skip tracks without preview
-     while(!state.recommendations[prevIndex].previewUrl && prevIndex !== currentIndex) {
-       prevIndex = (prevIndex - 1 + state.recommendations.length) % state.recommendations.length;
-     }
-     return prevIndex;
+  const getNextPlayableSong = (startIndex: number, direction: 'next' | 'prev') => {
+    const { recommendations } = state;
+    if (recommendations.length === 0) return null;
+
+    let currentIndex = startIndex;
+    for (let i = 0; i < recommendations.length; i++) {
+        if (direction === 'next') {
+            currentIndex = (currentIndex + 1) % recommendations.length;
+        } else {
+            currentIndex = (currentIndex - 1 + recommendations.length) % recommendations.length;
+        }
+        
+        if (recommendations[currentIndex].previewUrl) {
+            return recommendations[currentIndex];
+        }
+    }
+    return null; // No other playable song found
   }
 
   const handleNextSong = () => {
-    if (!selectedSong || state.recommendations.length === 0) return;
+    if (!selectedSong) return;
     const currentIndex = state.recommendations.findIndex(s => s.id === selectedSong.id);
-    const nextIndex = findNextSongIndex(currentIndex);
-    handleSelectSong(state.recommendations[nextIndex]);
+    const nextSong = getNextPlayableSong(currentIndex, 'next');
+    if (nextSong) {
+      handleSelectSong(nextSong, true);
+    }
   };
 
   const handlePrevSong = () => {
-    if (!selectedSong || state.recommendations.length === 0) return;
+    if (!selectedSong) return;
     const currentIndex = state.recommendations.findIndex(s => s.id === selectedSong.id);
-    const prevIndex = findPrevSongIndex(currentIndex);
-    handleSelectSong(state.recommendations[prevIndex]);
+    const prevSong = getNextPlayableSong(currentIndex, 'prev');
+    if (prevSong) {
+      handleSelectSong(prevSong, true);
+    }
   };
 
   return (
@@ -323,7 +362,8 @@ export default function Home() {
             </div>
 
             {/* Recommendations List */}
-            {state.recommendations.length > 0 && (
+            {pending && <RecommendationSkeleton />}
+            {!pending && state.recommendations.length > 0 && (
               <section className="w-full max-w-xl animate-in fade-in-50 duration-500 mt-4 md:mt-0">
                 <div className="flex flex-col">
                   {state.recommendations.map((song) => (
