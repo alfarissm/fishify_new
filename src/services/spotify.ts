@@ -1,11 +1,13 @@
 'use server';
 
 import SpotifyWebApi from 'spotify-web-api-node';
+import getConfig from 'next/config';
 
-// Ensure you have SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET in your .env file
+const { serverRuntimeConfig } = getConfig() || {};
+
 const spotifyApi = new SpotifyWebApi({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+  clientId: serverRuntimeConfig.spotifyClientId || process.env.SPOTIFY_CLIENT_ID,
+  clientSecret: serverRuntimeConfig.spotifyClientSecret || process.env.SPOTIFY_CLIENT_SECRET,
 });
 
 let tokenExpirationTime = 0;
