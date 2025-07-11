@@ -38,12 +38,6 @@ Here’s how the flow works:
 
 ---
 
-## 📦 Installation (Coming Soon)
-
-We'll update this section with setup instructions once the backend is finalized.
-
----
-
 ## 💡 Example Prompt Ideas
 
 - `"music to help me focus"`  

@@ -59,11 +59,13 @@ const recommendationPrompt = ai.definePrompt({
   name: 'recommendationPrompt',
   input: { schema: RecommendSongsFromInputInputSchema },
   output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(10) }) },
-  prompt: `You are a music recommendation expert. Your goal is to recommend 10 songs based on the user's input. First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
+  prompt: `You are a music recommendation expert with a deep knowledge of both classic hits and current trending music. Your goal is to recommend 10 songs based on the user's input. Prioritize newer, more contemporary songs where appropriate, but feel free to include timeless classics if they fit the mood.
 
-- If the input is an artist's name, recommend 10 popular songs by that artist.
-- If the input is a song title, recommend 10 songs with a similar style or from similar artists.
-- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 10 songs that fit that context.
+First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
+
+- If the input is an artist's name, recommend 10 popular songs by that artist, including their newer releases.
+- If the input is a song title, recommend 10 songs with a similar style or from similar artists, focusing on modern equivalents.
+- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 10 songs that fit that context, blending current hits with suitable classics.
 
 Provide just the song name and artist. Do not provide any other information.
 
