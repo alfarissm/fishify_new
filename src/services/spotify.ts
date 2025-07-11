@@ -25,6 +25,10 @@ async function getAccessToken() {
   }
 }
 
+/**
+ * Searches for a specific track by a specific artist.
+ * Less flexible, used for exact matches.
+ */
 export async function searchSpotifyTrack(trackName: string, artistName: string) {
   await getAccessToken();
 
@@ -38,6 +42,28 @@ export async function searchSpotifyTrack(trackName: string, artistName: string) 
     return null;
   } catch (err) {
     console.error('Something went wrong when searching for the track', err);
+    return null;
+  }
+}
+
+/**
+ * Performs a general search on Spotify for tracks.
+ * @param query A general search query string (e.g., "upbeat pop", "lo-fi beats").
+ * @returns An array of track objects.
+ */
+export async function searchSpotify(query: string) {
+  await getAccessToken();
+
+  try {
+    // Search for tracks with the given query
+    const data = await spotifyApi.searchTracks(query, { limit: 20 });
+    
+    if (data.body.tracks && data.body.tracks.items.length > 0) {
+      return data.body.tracks.items;
+    }
+    return null;
+  } catch (err) {
+    console.error('Something went wrong when searching Spotify', err);
     return null;
   }
 }

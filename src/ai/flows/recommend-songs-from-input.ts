@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { searchSpotifyTrack } from '@/services/spotify';
+import { searchSpotify } from '@/services/spotify';
 
 const RecommendSongsFromInputInputSchema = z.object({
   input: z
@@ -19,11 +19,6 @@ const RecommendSongsFromInputInputSchema = z.object({
 export type RecommendSongsFromInputInput = z.infer<
   typeof RecommendSongsFromInputInputSchema
 >;
-
-const SongSuggestionSchema = z.object({
-  name: z.string().describe('The name of the song.'),
-  artist: z.string().describe('The artist of the song.'),
-});
 
 const RecommendSongsFromInputOutputSchema = z.object({
   songs: z
@@ -58,16 +53,14 @@ const formatDuration = (ms: number): string => {
 const recommendationPrompt = ai.definePrompt({
   name: 'recommendationPrompt',
   input: { schema: RecommendSongsFromInputInputSchema },
-  output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(10) }) },
-  prompt: `You are a music recommendation expert with a deep knowledge of both classic hits and current trending music. Your goal is to recommend 10 songs based on the user's input. Prioritize newer, more contemporary songs where appropriate, but feel free to include timeless classics if they fit the mood.
+  output: { schema: z.object({ query: z.string().describe('A search query for Spotify with a maximum of 5 words, including genre, mood, or artist keywords.') }) },
+  prompt: `You are an expert music curator who creates Spotify search queries. Your task is to convert a user's request into an effective search query. The query should be concise (max 5 words) and include genres, moods, or artists to find relevant music.
 
-First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
+- If the user provides a mood or activity (e.g., 'rainy day', 'workout'), create a query with relevant genres and moods (e.g., 'lo-fi beats', 'high-energy pop workout').
+- If the user provides an artist, create a query for that artist or similar ones (e.g., 'artists like Tame Impala').
+- If the user provides a song, create a query based on its style (e.g., '80s synth-pop revival').
 
-- If the input is an artist's name, recommend 10 popular songs by that artist, including their newer releases.
-- If the input is a song title, recommend 10 songs with a similar style or from similar artists, focusing on modern equivalents.
-- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 10 songs that fit that context, blending current hits with suitable classics.
-
-Provide just the song name and artist. Do not provide any other information.
+Focus on creating a search query that will yield fresh, relevant, and interesting results on Spotify.
 
 User's input: "{{{input}}}"`,
 });
@@ -81,14 +74,33 @@ const recommendSongsFromInputFlow = ai.defineFlow(
   },
   async (input) => {
     const { output: recommendation } = await recommendationPrompt(input);
-    if (!recommendation) {
-      throw new Error('Could not get song recommendations.');
+    if (!recommendation || !recommendation.query) {
+      throw new Error('Could not generate a search query.');
     }
 
-    const songPromises = recommendation.songs.map(async (song) => {
-      const track = await searchSpotifyTrack(song.name, song.artist);
-      if (track) {
-        return {
+    const tracks = await searchSpotify(recommendation.query);
+
+    if (!tracks || tracks.length === 0) {
+      return { songs: [] };
+    }
+
+    const songs = tracks.map((track) => {
+      return {
+        id: track.id,
+        name: track.name,
+        artist: track.artists[0]?.name || 'Unknown Artist',
+        album: track.album.name,
+        spotifyUrl: track.external_urls.spotify,
+        imageUrl: track.album.images[0]?.url || 'https://placehold.co/300x300.png',
+        duration: formatDuration(track.duration_ms),
+        previewUrl: track.preview_url,
+      };
+    }).filter(song => song.previewUrl); // Ensure we only return songs with previews for a better UX
+
+    // If filtering removes all songs, return a slice of the original unfiltered list
+    if (songs.length === 0 && tracks.length > 0) {
+      return {
+        songs: tracks.slice(0, 10).map((track) => ({
           id: track.id,
           name: track.name,
           artist: track.artists[0]?.name || 'Unknown Artist',
@@ -97,23 +109,11 @@ const recommendSongsFromInputFlow = ai.defineFlow(
           imageUrl: track.album.images[0]?.url || 'https://placehold.co/300x300.png',
           duration: formatDuration(track.duration_ms),
           previewUrl: track.preview_url,
-        };
+        }))
       }
-      // Fallback if Spotify search fails for a specific song
-      return {
-        id: `${song.name}-${song.artist}`.replace(/\s/g, '-'),
-        name: song.name,
-        artist: song.artist,
-        album: 'Unknown Album',
-        spotifyUrl: '',
-        imageUrl: 'https://placehold.co/300x300.png',
-        duration: '0:00',
-        previewUrl: null,
-      };
-    });
+    }
 
-    const songs = await Promise.all(songPromises);
 
-    return { songs: songs.filter(song => song.spotifyUrl) }; // Filter out songs not found on Spotify
+    return { songs: songs.slice(0, 10) };
   }
 );
