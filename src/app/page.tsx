@@ -407,6 +407,11 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Watermark */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 text-center py-2 text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors bg-background/50 backdrop-blur-sm">
+        Project by Alfaris
+      </footer>
     </div>
   );
 }
