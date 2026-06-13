@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { searchItunesTrack } from '@/services/itunes';
+import { searchItunesTrack, getTrendingTracks } from '@/services/itunes';
 
 const RecommendSongsFromInputInputSchema = z.object({
   input: z
@@ -55,19 +55,30 @@ const formatDuration = (ms: number): string => {
   return `${minutes}:${(parseInt(seconds) < 10 ? '0' : '')}${seconds}`;
 }
 
+const PromptInputSchema = z.object({
+  input: z.string(),
+  trending: z.string(),
+});
+
 const recommendationPrompt = ai.definePrompt({
   name: 'recommendationPrompt',
-  input: { schema: RecommendSongsFromInputInputSchema },
+  input: { schema: PromptInputSchema },
   output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(10) }) },
-  prompt: `You are a music recommendation expert with a deep knowledge of both classic hits and current trending music. Your goal is to recommend 10 songs based on the user's input. Prioritize newer, more contemporary songs where appropriate, but feel free to include timeless classics if they fit the mood.
+  prompt: `You are a music recommendation expert. Recommend 10 songs based on the user's input.
 
-First, analyze the user's input to determine if it is a specific artist, a song title, a mood, or an activity.
+Below is a list of songs that are TRENDING RIGHT NOW (current charts). Use this as your source of truth for what is new and popular today — your own training data is outdated, so rely on this list for recency:
 
-- If the input is an artist's name, recommend 10 popular songs by that artist, including their newer releases.
-- If the input is a song title, recommend 10 songs with a similar style or from similar artists, focusing on modern equivalents.
-- If the input describes a mood (e.g., 'rainy day', 'happy') or an activity (e.g., 'workout', 'studying'), recommend 10 songs that fit that context, blending current hits with suitable classics.
+{{{trending}}}
 
-Provide just the song name and artist. Do not provide any other information.
+Rules:
+- Analyze the user's input: a specific artist, a song title, a mood, or an activity.
+- Aim for a mix where AT LEAST HALF of the 10 songs are current/recent — prefer tracks from the trending list above (or other songs by those same current artists) whenever they fit the user's request.
+- Only add older or classic songs when they genuinely fit the mood and a recent option doesn't exist.
+- If the input is an artist's name, recommend their most popular and most recent songs.
+- If the input is a song title, recommend songs with a similar style, favoring current artists.
+- Recommend only real, existing songs (no invented titles).
+
+Provide just the song name and artist. Nothing else.
 
 User's input: "{{{input}}}"`,
 });
@@ -80,7 +91,15 @@ const recommendSongsFromInputFlow = ai.defineFlow(
     outputSchema: RecommendSongsFromInputOutputSchema,
   },
   async (input) => {
-    const { output: recommendation } = await recommendationPrompt(input);
+    const trendingTracks = await getTrendingTracks(50);
+    const trending = trendingTracks.length
+      ? trendingTracks.map((t) => `- ${t.name} — ${t.artist}`).join('\n')
+      : 'No live chart data available; use your best judgment but still favor recent, well-known songs.';
+
+    const { output: recommendation } = await recommendationPrompt({
+      input: input.input,
+      trending,
+    });
     if (!recommendation) {
       throw new Error('Could not get song recommendations.');
     }
