@@ -9,7 +9,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { searchSpotifyTrack } from '@/services/spotify';
+import { searchItunesTrack } from '@/services/itunes';
 
 const RecommendSongsFromInputInputSchema = z.object({
   input: z
@@ -32,7 +32,7 @@ const RecommendSongsFromInputOutputSchema = z.object({
       name: z.string().describe('The name of the song.'), 
       artist: z.string().describe('The artist of the song.'),
       album: z.string().describe('The album the song belongs to.'),
-      spotifyUrl: z.string().describe('A link to the song on Spotify.'),
+      trackUrl: z.string().describe('A link to the song on Apple Music / iTunes.'),
       imageUrl: z.string().describe('A URL to the album cover image. Use a 300x300 placeholder from placehold.co.'),
       duration: z.string().describe('The duration of the song in mm:ss format.'),
       previewUrl: z.string().nullable().describe('The URL for a 30-second audio preview of the song, or null if not available.')
@@ -86,26 +86,27 @@ const recommendSongsFromInputFlow = ai.defineFlow(
     }
 
     const songPromises = recommendation.songs.map(async (song) => {
-      const track = await searchSpotifyTrack(song.name, song.artist);
+      const track = await searchItunesTrack(song.name, song.artist);
       if (track) {
         return {
-          id: track.id,
-          name: track.name,
-          artist: track.artists[0]?.name || 'Unknown Artist',
-          album: track.album.name,
-          spotifyUrl: track.external_urls.spotify,
-          imageUrl: track.album.images[0]?.url || 'https://placehold.co/300x300.png',
-          duration: formatDuration(track.duration_ms),
-          previewUrl: track.preview_url,
+          id: String(track.trackId),
+          name: track.trackName,
+          artist: track.artistName || 'Unknown Artist',
+          album: track.collectionName || 'Unknown Album',
+          trackUrl: track.trackViewUrl,
+          // Upscale the 100x100 artwork to 600x600 for a sharper image.
+          imageUrl: track.artworkUrl100?.replace('100x100', '600x600') || 'https://placehold.co/300x300.png',
+          duration: formatDuration(track.trackTimeMillis),
+          previewUrl: track.previewUrl,
         };
       }
-      // Fallback if Spotify search fails for a specific song
+      // Fallback if iTunes search fails for a specific song
       return {
         id: `${song.name}-${song.artist}`.replace(/\s/g, '-'),
         name: song.name,
         artist: song.artist,
         album: 'Unknown Album',
-        spotifyUrl: '',
+        trackUrl: '',
         imageUrl: 'https://placehold.co/300x300.png',
         duration: '0:00',
         previewUrl: null,
@@ -114,6 +115,6 @@ const recommendSongsFromInputFlow = ai.defineFlow(
 
     const songs = await Promise.all(songPromises);
 
-    return { songs: songs.filter(song => song.spotifyUrl) }; // Filter out songs not found on Spotify
+    return { songs: songs.filter(song => song.trackUrl) }; // Filter out songs not found on iTunes
   }
 );

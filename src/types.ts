@@ -3,7 +3,7 @@ export type Song = {
   name: string;
   artist: string;
   album: string;
-  spotifyUrl: string;
+  trackUrl: string;
   imageUrl: string;
   duration: string;
   previewUrl: string | null;

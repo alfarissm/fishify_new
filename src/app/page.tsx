@@ -4,7 +4,7 @@
 import { useActionState, useState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
-import { Search, Loader2, X, Play, Pause, SkipBack, SkipForward, ExternalLink, Terminal } from 'lucide-react';
+import { Search, Loader2, X, Play, Pause, SkipBack, SkipForward, ExternalLink, Terminal, ArrowUp } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,6 @@ import type { ActionState, Song } from '@/types';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { Card, CardHeader, CardFooter, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -25,12 +24,14 @@ const initialState: ActionState = {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="ghost" size="icon" className="hover:bg-transparent text-muted-foreground hover:text-primary rounded-full" disabled={pending}>
-      {pending ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
-      ) : (
-        <Search className="h-5 w-5" />
-      )}
+    <Button
+      type="submit"
+      size="icon"
+      className="h-11 w-11 shrink-0 rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition hover:brightness-110 active:scale-95 disabled:opacity-60"
+      disabled={pending}
+      aria-label="Search"
+    >
+      {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp className="h-5 w-5" />}
     </Button>
   );
 }
@@ -65,85 +66,94 @@ function MusicPlayerPreview({
   const remainingTime = PREVIEW_DURATION - currentTime;
 
   return (
-    <Card className="w-full max-w-sm rounded-xl bg-card text-card-foreground shadow-2xl animate-in fade-in-50 slide-in-from-right-5 duration-500 flex flex-col mt-8 md:mt-0 overflow-hidden border-0">
-      <CardHeader className="p-0 relative h-64">
-        <Image
-          src={song.imageUrl}
-          alt={`${song.name} by ${song.artist}`}
-          width={300}
-          height={300}
-          className="w-full h-full object-cover"
-          data-ai-hint="album cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="absolute top-2 right-2">
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white/70 hover:text-white hover:bg-white/10">
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </Button>
+    <div className="w-full max-w-sm md:sticky md:top-8 animate-in fade-in-50 slide-in-from-bottom-4 md:slide-in-from-right-4 duration-700">
+      <div className="relative rounded-[1.75rem] border border-foreground/10 bg-card/70 p-5 shadow-2xl backdrop-blur-xl">
+        <button
+          onClick={onClose}
+          aria-label="Close player"
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/40 text-foreground/60 backdrop-blur transition-colors hover:bg-background/70 hover:text-foreground"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        {/* Artwork */}
+        <div className="relative mx-auto aspect-square w-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-foreground/10">
+          <Image
+            src={song.imageUrl}
+            alt={`${song.name} by ${song.artist}`}
+            width={600}
+            height={600}
+            className="h-full w-full object-cover"
+            data-ai-hint="album cover"
+            priority
+          />
         </div>
-        <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-          <div className="w-full px-2">
-            <Progress value={progress} className="h-1 bg-white/20" />
-            <div className="flex justify-between text-xs font-mono text-white/70 mt-1">
-              <span>{formatTime(currentTime)}</span>
-              <span>-{formatTime(remainingTime > 0 ? remainingTime : 0)}</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-center gap-2 w-full mt-2">
-            <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10" onClick={onPrev}>
-              <SkipBack className="h-7 w-7" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-16 w-16 rounded-full bg-white/90 text-black hover:bg-white disabled:bg-white/50 disabled:cursor-not-allowed"
-              onClick={onPlayPause}
-              disabled={!song.previewUrl}
-            >
-              {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 fill-current" />}
-            </Button>
-            <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10" onClick={onNext}>
-              <SkipForward className="h-7 w-7" />
-            </Button>
+
+        {/* Track meta */}
+        <div className="mt-5 text-center">
+          <h2 className="font-headline text-xl font-bold tracking-tight text-balance text-foreground">{song.name}</h2>
+          <p className="mt-1 text-sm font-medium text-primary">{song.artist}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{song.album}</p>
+        </div>
+
+        {/* Scrubber */}
+        <div className="mt-5">
+          <Progress value={progress} className="h-1.5" />
+          <div className="mt-1.5 flex justify-between font-code text-[11px] tabular-nums text-muted-foreground">
+            <span>{formatTime(currentTime)}</span>
+            <span>-{formatTime(remainingTime > 0 ? remainingTime : 0)}</span>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="p-6">
-        <CardTitle className="font-headline">{song.name}</CardTitle>
-        <CardDescription>{song.artist} • {song.album}</CardDescription>
+
+        {/* Transport */}
+        <div className="mt-4 flex items-center justify-center gap-7">
+          <button onClick={onPrev} aria-label="Previous track" className="text-foreground/70 transition-transform hover:text-foreground active:scale-90">
+            <SkipBack className="h-6 w-6 fill-current" />
+          </button>
+          <button
+            onClick={onPlayPause}
+            disabled={!song.previewUrl}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100"
+          >
+            {isPlaying ? <Pause className="h-7 w-7 fill-current" /> : <Play className="ml-0.5 h-7 w-7 fill-current" />}
+          </button>
+          <button onClick={onNext} aria-label="Next track" className="text-foreground/70 transition-transform hover:text-foreground active:scale-90">
+            <SkipForward className="h-6 w-6 fill-current" />
+          </button>
+        </div>
+
         {!song.previewUrl && (
-          <Alert variant="default" className="mt-4 text-xs bg-secondary">
-             <AlertDescription>
-              No 30s preview available for this track on Spotify.
-            </AlertDescription>
-          </Alert>
+          <p className="mt-4 text-center text-xs text-muted-foreground">No 30-second preview available for this track.</p>
         )}
-      </CardContent>
-      <CardFooter className="p-4 flex justify-between items-center bg-card/50">
-        <a href={song.spotifyUrl} target="_blank" rel="noopener noreferrer" className="w-full">
-          <Button variant="outline" className="w-full">
-            Listen on Spotify
-            <ExternalLink className="ml-2 h-4 w-4" />
-          </Button>
+
+        {/* Apple Music link */}
+        <a
+          href={song.trackUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition hover:brightness-110 active:scale-[0.98]"
+        >
+          Listen on Apple Music
+          <ExternalLink className="h-4 w-4" />
         </a>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   )
 }
 
 function RecommendationSkeleton() {
   return (
-    <div className="w-full max-w-xl animate-pulse mt-4 md:mt-0">
-      <div className="flex flex-col">
+    <div className="w-full max-w-xl mt-2 md:mt-0">
+      <div className="flex flex-col gap-1">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="flex items-center p-1.5 rounded-lg">
-            <Skeleton className="h-8 w-8 rounded-md mr-3" />
+          <div key={i} className="flex items-center gap-3 rounded-xl p-2">
+            <Skeleton className="h-12 w-12 rounded-lg" />
             <div className="flex-grow space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-3.5 w-1/2" />
+              <Skeleton className="h-3 w-1/3" />
             </div>
-            <Skeleton className="h-4 w-10 ml-4" />
+            <Skeleton className="h-3 w-9" />
           </div>
         ))}
       </div>
@@ -315,12 +325,28 @@ export default function Home() {
   const progress = audioRef.current ? (currentTime / PREVIEW_DURATION) * 100 : 0;
 
   return (
-    <div className="flex min-h-screen bg-background transition-colors duration-500">
+    <div className="relative flex min-h-screen overflow-hidden bg-background transition-colors duration-500">
+      {/* Ambient artwork backdrop */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {selectedSong && (
+          <Image
+            key={selectedSong.id}
+            src={selectedSong.imageUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="ambient-layer scale-125 object-cover opacity-40 blur-[120px] saturate-150 animate-in fade-in duration-1000 dark:opacity-30"
+          />
+        )}
+        <div className="absolute inset-0 bg-background/70 backdrop-blur-3xl" />
+      </div>
+
       <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
 
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-8 pt-16">
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-8 pt-16">
         <div className={cn(
           "flex w-full max-w-6xl transition-all duration-500 ease-in-out",
           hasSearched ? 'flex-col md:flex-row items-start gap-8' : 'flex-col items-center'
@@ -332,21 +358,25 @@ export default function Home() {
           )}>
             <header className={cn(
               "text-center transition-all duration-500 ease-in-out overflow-hidden",
-              hasSearched ? 'h-0 opacity-0' : 'h-40 opacity-100 mb-8'
+              hasSearched ? 'h-0 opacity-0' : 'h-44 opacity-100 mb-8'
             )}>
-              <h1 className="text-4xl sm:text-5xl font-bold text-primary font-headline">Fishify</h1>
-              <p className="text-muted-foreground mt-2 text-lg max-w-md mx-auto">
-                Tell us your mood, an activity, or a song you like. We&apos;ll find the perfect soundtrack.
+              <h1 className="font-headline text-5xl sm:text-6xl font-extrabold tracking-tighter text-balance text-foreground">Fishify</h1>
+              <p className="mx-auto mt-3 max-w-md text-balance text-lg text-muted-foreground">
+                Describe a mood, an activity, or a song you love. We&apos;ll find the perfect soundtrack.
               </p>
             </header>
 
             {/* Search Bar */}
             <div className="w-full px-4 mb-8">
-              <form action={handleFormAction} className="flex items-center w-full bg-input rounded-full p-1 border focus-within:border-primary transition-colors">
+              <form
+                action={handleFormAction}
+                className="flex items-center w-full rounded-full border border-foreground/10 bg-card/60 p-1.5 pl-5 shadow-lg backdrop-blur-xl transition-colors focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20"
+              >
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <Input
                   name="prompt"
-                  placeholder="e.g., 'rainy day', 'workout', 'NIKI'"
-                  className="flex-1 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
+                  placeholder="rainy day, workout, songs like NIKI…"
+                  className="flex-1 border-none bg-transparent text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                   required
                 />
                 <SubmitButton />
@@ -370,32 +400,49 @@ export default function Home() {
             {/* Recommendations List */}
             {pending && <RecommendationSkeleton />}
             {!pending && state.recommendations.length > 0 && (
-              <section className="w-full max-w-xl animate-in fade-in-50 duration-500 mt-4 md:mt-0">
-                <div className="flex flex-col">
-                  {state.recommendations.map((song) => (
-                    <button
-                      key={song.id}
-                      onClick={() => handleSelectSong(song)}
-                      className={cn(
-                        "flex items-center p-1.5 rounded-lg hover:bg-card transition-all group text-left w-full",
-                        selectedSong?.id === song.id && 'bg-card'
-                      )}
-                    >
-                      <Image
-                        src={song.imageUrl}
-                        alt={`${song.name} by ${song.artist}`}
-                        width={32}
-                        height={32}
-                        className="rounded-md mr-3"
-                        data-ai-hint="album cover"
-                      />
-                      <div className="flex-grow">
-                        <h3 className={cn("font-semibold text-sm text-foreground", selectedSong?.id === song.id ? 'text-primary' : 'group-hover:text-primary')}>{song.name}</h3>
-                        <p className="text-xs text-muted-foreground">{song.artist}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground ml-4">{song.duration}</span>
-                    </button>
-                  ))}
+              <section className="w-full max-w-xl animate-in fade-in-50 duration-500 mt-2 md:mt-0">
+                <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {state.recommendations.length} tracks for you
+                </h2>
+                <div className="flex flex-col gap-0.5">
+                  {state.recommendations.map((song, i) => {
+                    const isActive = selectedSong?.id === song.id;
+                    const isNowPlaying = isActive && isPlaying;
+                    return (
+                      <button
+                        key={song.id}
+                        onClick={() => handleSelectSong(song)}
+                        style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
+                        className={cn(
+                          "group flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors animate-in fade-in-50 slide-in-from-bottom-1 fill-mode-both duration-500",
+                          isActive ? 'bg-foreground/10' : 'hover:bg-foreground/5'
+                        )}
+                      >
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg shadow-sm ring-1 ring-foreground/10">
+                          <Image
+                            src={song.imageUrl}
+                            alt={`${song.name} by ${song.artist}`}
+                            width={48}
+                            height={48}
+                            className="h-full w-full object-cover"
+                            data-ai-hint="album cover"
+                          />
+                          {isNowPlaying && (
+                            <div className="absolute inset-0 flex items-end justify-center gap-0.5 bg-black/40 pb-2.5">
+                              <span className="eq-bar h-3" />
+                              <span className="eq-bar h-4" />
+                              <span className="eq-bar h-2.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-grow">
+                          <h3 className={cn("truncate text-sm font-semibold", isActive ? 'text-primary' : 'text-foreground group-hover:text-primary')}>{song.name}</h3>
+                          <p className="truncate text-xs text-muted-foreground">{song.artist}</p>
+                        </div>
+                        <span className="ml-2 shrink-0 font-code text-xs tabular-nums text-muted-foreground">{song.duration}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </section>
             )}

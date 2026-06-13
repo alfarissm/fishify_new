@@ -2,63 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
+    /* Light — clean iTunes/Finder white */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 240 6% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 6% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 141 76% 36%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 141 76% 36%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --radius: 0.5rem;
+    --popover-foreground: 240 6% 10%;
+    /* Apple Music signature red/pink */
+    --primary: 350 84% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 42%;
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 6% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 90%;
+    --input: 240 6% 94%;
+    --ring: 350 84% 55%;
+    --chart-1: 350 84% 55%;
+    --chart-2: 280 65% 60%;
+    --chart-3: 200 80% 55%;
+    --chart-4: 30 90% 58%;
+    --chart-5: 160 60% 45%;
+    --radius: 0.875rem;
   }
+
   .dark {
-    --background: 240 10% 3.9%;
+    /* Dark — Apple Music near-black, neutral */
+    --background: 240 4% 7%;
     --foreground: 0 0% 98%;
-    --card: 240 4% 10%;
+    --card: 240 4% 11%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 240 4% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 141 76% 41%;
-    --primary-foreground: 240 10% 3.9%;
-    --secondary: 240 4% 16%;
+    --primary: 350 89% 62%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 240 4% 20%;
+    --muted: 240 4% 15%;
+    --muted-foreground: 0 0% 66%;
+    --accent: 240 4% 18%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 4% 16%;
+    --border: 240 4% 18%;
     --input: 240 4% 16%;
-    --ring: 141 76% 41%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --ring: 350 89% 62%;
+    --chart-1: 350 89% 62%;
+    --chart-2: 280 65% 65%;
+    --chart-3: 200 80% 60%;
+    --chart-4: 30 90% 62%;
+    --chart-5: 160 60% 50%;
   }
 }
 
@@ -68,5 +68,47 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+}
+
+@layer utilities {
+  /* Ambient artwork glow behind the now-playing surface */
+  .ambient-layer {
+    transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity;
+  }
+
+  /* Now-playing equalizer bars */
+  .eq-bar {
+    width: 2px;
+    border-radius: 2px;
+    background-color: hsl(var(--primary));
+    transform-origin: bottom;
+    animation: eq-bounce 1s ease-in-out infinite;
+  }
+  .eq-bar:nth-child(1) { animation-delay: -0.4s; }
+  .eq-bar:nth-child(2) { animation-delay: -0.15s; }
+  .eq-bar:nth-child(3) { animation-delay: -0.6s; }
+}
+
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes ambient-float {
+  0%, 100% { transform: scale(1.05) translate(0, 0); }
+  50% { transform: scale(1.12) translate(2%, -2%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .eq-bar { transform: scaleY(0.6); }
 }

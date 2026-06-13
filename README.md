@@ -7,7 +7,7 @@ Just describe your **mood**, an **activity**, or mention a **song/artist** you l
 
 ## 🚀 How It Works
 
-The magic behind Fishify combines a **Next.js frontend**, an **AI backend powered by Genkit**, and the **Spotify Web API**.  
+The magic behind Fishify combines a **Next.js frontend**, an **AI backend powered by Genkit (Groq)**, and the **free iTunes Search API**.  
 Here’s how the flow works:
 
 1. **📝 User Input**  
@@ -16,10 +16,10 @@ Here’s how the flow works:
 2. **🧠 AI Request (via Genkit)**  
    The app sends the prompt to the Genkit AI backend. Genkit uses an advanced language model to understand the context and return a list of 10 suitable **song titles and artists**.
 
-3. **🎧 Spotify Data Enrichment**  
-   For each AI-suggested song, the app queries the **Spotify API** to fetch:
+3. **🎧 iTunes Data Enrichment**  
+   For each AI-suggested song, the app queries the **iTunes Search API** (free, no key) to fetch:
    - Album cover image  
-   - Spotify track link  
+   - Apple Music track link  
    - Song duration  
    - 30-second audio preview URL (if available)
 
@@ -32,8 +32,8 @@ Here’s how the flow works:
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js, Tailwind CSS, TypeScript  
-- **Backend AI**: Genkit (Google AI SDK)  
-- **Music API**: Spotify Web API  
+- **Backend AI**: Genkit + Groq (llama-3.3-70b)  
+- **Music API**: iTunes Search API (free, no key)  
 - **Deployment**: Vercel 
 
 ---
@@ -50,8 +50,8 @@ Here’s how the flow works:
 
 ## ⚠️ Limitations
 
-- Not all Spotify songs have a `preview_url`. These will be skipped or shown as "preview not available".
-- Current AI suggestions are based on text interpretation, not your Spotify history (yet 😉).
+- Not all tracks have a preview on iTunes. These are skipped or shown as "preview not available".
+- AI suggestions are based on text interpretation, not your listening history (yet 😉).
 
 ---
 
