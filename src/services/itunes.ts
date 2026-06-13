@@ -14,38 +14,6 @@ export type ItunesTrack = {
   previewUrl: string | null;
 };
 
-export type TrendingTrack = { name: string; artist: string };
-
-// Apple's free RSS chart feed — current top songs, no key required.
-// Used to ground the LLM in tracks that actually exist right now,
-// so recommendations aren't limited to the model's training cutoff.
-export async function getTrendingTracks(
-  limit = 50,
-  country = 'us'
-): Promise<TrendingTrack[]> {
-  try {
-    const url = `https://rss.marketingtools.apple.com/api/v2/${country}/music/most-played/${limit}/songs.json`;
-    const res = await fetch(url, {
-      // Charts move slowly; refresh a few times a day.
-      next: { revalidate: 60 * 60 * 6 },
-    });
-
-    if (!res.ok) {
-      console.error('Apple RSS chart fetch failed', res.status);
-      return [];
-    }
-
-    const data = (await res.json()) as {
-      feed?: { results?: Array<{ name: string; artistName: string }> };
-    };
-    const results = data.feed?.results ?? [];
-    return results.map((r) => ({ name: r.name, artist: r.artistName }));
-  } catch (err) {
-    console.error('Failed to fetch trending tracks', err);
-    return [];
-  }
-}
-
 export async function searchItunesTrack(
   trackName: string,
   artistName: string

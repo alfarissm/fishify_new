@@ -9,7 +9,6 @@
 ## ✨ Features
 
 - 🧠 **Natural-language search** — prompt with a mood, activity, artist, or vibe.
-- 📈 **Stays current** — grounded on Apple's live Top Songs chart, so picks aren't stuck at the AI's training cutoff.
 - 🎧 **Instant previews** — built-in 30-second audio player with prev / play / next.
 - 🖼️ **Apple Music–style UI** — ambient artwork backdrop, now-playing card, animated equalizer on the active track.
 - 🌗 **Light & dark themes** — toggle in the top-right, dark by default.
@@ -23,7 +22,7 @@
 A **Next.js frontend**, an **AI backend powered by Genkit + Groq**, and the **free iTunes Search API**:
 
 1. **📝 User input** — you enter a prompt (e.g. `"music for a rainy day"`) and hit search.
-2. **🧠 AI request (Genkit + Groq)** — the prompt goes to a server action. To stay current despite the model's training cutoff, the app first pulls Apple's live "Top Songs" chart and feeds it to the Groq LLM (`llama-3.3-70b`) as grounding, which then returns 10 song titles + artists biased toward recent, real tracks.
+2. **🧠 AI request (Genkit + Groq)** — the prompt goes to a server action; a Groq LLM (`llama-3.3-70b`) interprets it and returns 10 song titles + artists.
 3. **🎧 iTunes enrichment** — for each suggestion, the app queries the iTunes Search API for:
    - Album cover art
    - Apple Music track link
