@@ -64,18 +64,21 @@ const recommendationPrompt = ai.definePrompt({
   name: 'recommendationPrompt',
   input: { schema: PromptInputSchema },
   output: { schema: z.object({ songs: z.array(SongSuggestionSchema).length(10) }) },
-  prompt: `You are a music recommendation expert. Recommend 10 songs based on the user's input.
+  prompt: `You are a music recommendation expert. Recommend 10 songs that genuinely match the user's input.
 
-Below is a list of songs that are TRENDING RIGHT NOW (current charts). Use this as your source of truth for what is new and popular today — your own training data is outdated, so rely on this list for recency:
+THE #1 RULE: every song must actually fit the user's request — the mood, activity, artist, or style they asked for. Relevance always wins. Never include a song that doesn't fit just because it is popular or recent.
+
+For awareness of what is current (your training data is outdated), here is what is TRENDING RIGHT NOW:
 
 {{{trending}}}
 
-Rules:
-- Analyze the user's input: a specific artist, a song title, a mood, or an activity.
-- Aim for a mix where AT LEAST HALF of the 10 songs are current/recent — prefer tracks from the trending list above (or other songs by those same current artists) whenever they fit the user's request.
-- Only add older or classic songs when they genuinely fit the mood and a recent option doesn't exist.
-- If the input is an artist's name, recommend their most popular and most recent songs.
-- If the input is a song title, recommend songs with a similar style, favoring current artists.
+How to use that list: ONLY as a reference for which artists and songs are current. When two songs fit the request equally well, prefer the more recent one or a current artist. Do NOT pull songs from this list if they don't match the mood/request. It is not a quota.
+
+Steps:
+- Decide if the input is an artist, a song title, a mood, or an activity.
+- Artist → their most fitting popular and recent songs.
+- Song title → songs with a similar style/vibe.
+- Mood/activity → songs that truly match that feeling, blending recent and classic as the mood demands.
 - Recommend only real, existing songs (no invented titles).
 
 Provide just the song name and artist. Nothing else.
