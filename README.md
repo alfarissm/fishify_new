@@ -119,8 +119,12 @@ Image artwork from Apple (`*.mzstatic.com`) is already whitelisted in `next.conf
 
 ## Limitations
 
-- Not every track has an iTunes preview; those are skipped or shown as *"preview not available"*.
-- Recommendations are based on text interpretation, not your personal listening history (yet).
+- **Preview length is fixed by Apple** — clips are ~30 seconds (some ~90s) and the player caps at 30s. Full songs require an Apple Music subscription; use the "Listen on Apple Music" button.
+- **Not every track has a preview** — those without one are skipped or shown as *"preview not available"*.
+- **AI training cutoff** — the Groq model only knows music up to its training date, so very recent releases may not appear.
+- **Groq free-tier rate limits** — under heavy traffic the AI request can hit a `429` rate limit; results then fail until it resets.
+- **Best-match enrichment** — iTunes returns the closest match per title, so an occasional remaster or alternate version may be picked. Suggestions not found on iTunes are dropped.
+- **No personalization** — recommendations come from your text prompt only, not your listening history.
 
 ---
 
