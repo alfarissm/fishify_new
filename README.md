@@ -6,6 +6,14 @@
 
 ---
 
+## 📸 Screenshots
+
+|                     Home                      |                       Results                       |
+| :-------------------------------------------: | :-------------------------------------------------: |
+| ![Fishify home screen](docs/screenshot-home.png) | ![Fishify recommendations](docs/screenshot-results.png) |
+
+---
+
 ## ✨ Features
 
 - 🧠 **Natural-language search** — prompt with a mood, activity, artist, or vibe.
