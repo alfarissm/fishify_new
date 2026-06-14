@@ -1,4 +1,11 @@
-# 🐟 Fishify — AI Music Recommender
+# Fishify — AI Music Recommender
+
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=for-the-badge)
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 
 **Fishify** turns plain language into a soundtrack. Describe a **mood**, an **activity**, or a **song/artist** you love, and an AI returns 10 curated tracks — each with album art, a 30-second preview, and an Apple Music link, wrapped in a sleek Apple Music–style interface.
 
@@ -6,7 +13,7 @@
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 |                     Home                      |                       Results                       |
 | :-------------------------------------------: | :-------------------------------------------------: |
@@ -14,33 +21,33 @@
 
 ---
 
-## ✨ Features
+## Features
 
-- 🧠 **Natural-language search** — prompt with a mood, activity, artist, or vibe.
-- 🎧 **Instant previews** — built-in 30-second audio player with prev / play / next.
-- 🖼️ **Apple Music–style UI** — ambient artwork backdrop, now-playing card, animated equalizer on the active track.
-- 🌗 **Light & dark themes** — toggle in the top-right, dark by default.
-- 🔗 **One-tap open** — jump straight to the full track on Apple Music.
-- 💸 **Zero music-API cost** — uses the free public iTunes Search API (no key, no auth, no premium).
+- **Natural-language search** — prompt with a mood, activity, artist, or vibe.
+- **Instant previews** — built-in 30-second audio player with prev / play / next.
+- **Apple Music–style UI** — ambient artwork backdrop, now-playing card, animated equalizer on the active track.
+- **Light & dark themes** — toggle in the top-right, dark by default.
+- **One-tap open** — jump straight to the full track on Apple Music.
+- **Zero music-API cost** — uses the free public iTunes Search API (no key, no auth, no premium).
 
 ---
 
-## 🚀 How It Works
+## How It Works
 
 A **Next.js frontend**, an **AI backend powered by Genkit + Groq**, and the **free iTunes Search API**:
 
-1. **📝 User input** — you enter a prompt (e.g. `"music for a rainy day"`) and hit search.
-2. **🧠 AI request (Genkit + Groq)** — the prompt goes to a server action; a Groq LLM (`llama-3.3-70b`) interprets it and returns 10 song titles + artists.
-3. **🎧 iTunes enrichment** — for each suggestion, the app queries the iTunes Search API for:
+1. **User input** — you enter a prompt (e.g. `"music for a rainy day"`) and hit search.
+2. **AI request (Genkit + Groq)** — the prompt goes to a server action; a Groq LLM (`llama-3.3-70b`) interprets it and returns 10 song titles + artists.
+3. **iTunes enrichment** — for each suggestion, the app queries the iTunes Search API for:
    - Album cover art
    - Apple Music track link
    - Song duration
    - 30-second preview URL (when available)
-4. **📱 Display** — results render as a list with a now-playing player for previews.
+4. **Display** — results render as a list with a now-playing player for previews.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Tech |
 |-------|------|
@@ -52,7 +59,7 @@ A **Next.js frontend**, an **AI backend powered by Genkit + Groq**, and the **fr
 
 ---
 
-## ⚙️ Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 - Node.js 18+
@@ -80,17 +87,17 @@ Open [http://localhost:9002](http://localhost:9002).
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GROQ_API_KEY` | ✅ Yes | Groq API key for AI recommendations |
+| `GROQ_API_KEY` | Yes | Groq API key for AI recommendations |
 
 That's it — iTunes is public, so there are no music-service credentials.
 
 ---
 
-## ☁️ Deploy to Vercel
+## Deploy to Vercel
 
 1. Import the repo at [vercel.com/new](https://vercel.com/new).
 2. **Settings → Environment Variables** → add `GROQ_API_KEY` (Production + Preview).
@@ -100,7 +107,7 @@ Image artwork from Apple (`*.mzstatic.com`) is already whitelisted in `next.conf
 
 ---
 
-## 💡 Prompt Ideas
+## Prompt Ideas
 
 - `music to help me focus`
 - `songs like Arctic Monkeys`
@@ -110,11 +117,11 @@ Image artwork from Apple (`*.mzstatic.com`) is already whitelisted in `next.conf
 
 ---
 
-## ⚠️ Limitations
+## Limitations
 
 - Not every track has an iTunes preview; those are skipped or shown as *"preview not available"*.
-- Recommendations are based on text interpretation, not your personal listening history (yet 😉).
+- Recommendations are based on text interpretation, not your personal listening history (yet).
 
 ---
 
-**Enjoy discovering music with Fishify! 🎶**
+**Enjoy discovering music with Fishify.**
